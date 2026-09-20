@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HomeGuard — Home record</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F4EF; --paper:#FBFAF7; --ink:#1E2A2F; --ink-soft:#5B6A6D;
+    --line:#D8D3C7; --line-strong:#B9B2A0; --accent:#2B5959; --accent-soft:#DCE7E5;
+    --good:#4B7F52; --good-bg:#E7EFE6; --caution:#B8873A; --caution-bg:#F5EDDD;
+    --concern:#A64B3C; --concern-bg:#F3E4DF; --neutral-bg:#EFEDE7;
+    --serif:'Lora', Georgia, serif; --sans:'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:var(--sans); line-height:1.5; -webkit-font-smoothing:antialiased;}
+  #app{max-width:480px; margin:0 auto; min-height:100vh; background:var(--paper); border-left:1px solid var(--line); border-right:1px solid var(--line);}
+  .proto-banner{background:var(--accent); color:var(--paper); font-size:12px; padding:9px 20px; text-align:center; line-height:1.4;}
+  header.topbar{padding:22px 20px 16px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; justify-content:space-between;}
+  header.topbar .mark{font-family:var(--serif); font-weight:600; font-size:19px;}
+  header.topbar .mark span{color:var(--accent);}
+  .back-btn{font-family:var(--sans); font-size:14px; color:var(--accent); background:none; border:none; cursor:pointer; padding:4px 0;}
+  main{padding:24px 20px 60px;}
+  .screen{display:none;}
+  .screen.active{display:block;}
+  h1.page-title{font-family:var(--serif); font-weight:600; font-size:23px; margin-bottom:4px;}
+  .page-sub{color:var(--ink-soft); font-size:14.5px; margin-bottom:24px;}
+  .property-line{display:flex; justify-content:space-between; align-items:baseline; padding-bottom:14px; margin-bottom:20px; border-bottom:1px solid var(--line-strong);}
+  .property-line .label{font-size:12.5px; color:var(--ink-soft);}
+  .property-line .name{font-family:var(--serif); font-size:17px; font-weight:600;}
+  .section-tab{font-size:12.5px; color:var(--ink-soft); padding-bottom:6px; margin:28px 0 10px; border-bottom:1px solid var(--line);}
+  .section-tab:first-of-type{margin-top:0;}
+  .asset-row{display:flex; justify-content:space-between; align-items:flex-start; padding:14px 0; border-bottom:1px solid var(--line);}
+  .asset-row:last-child{border-bottom:none;}
+  .asset-row .a-name{font-weight:600; font-size:15px;}
+  .asset-row .a-meta{font-size:13px; color:var(--ink-soft); margin-top:3px;}
+  .asset-row .a-status{font-size:12.5px; white-space:nowrap; padding-top:2px; text-align:right;}
+  .empty-state{padding:22px 0; color:var(--ink-soft); font-size:14px; border-bottom:1px solid var(--line);}
+  .action-btn{display:flex; align-items:center; justify-content:space-between; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:16px 0; cursor:pointer; font-family:var(--sans);}
+  .action-btn:last-child{border-bottom:none;}
+  .action-btn .a-title{font-size:15.5px; font-weight:600;}
+  .action-btn .a-desc{font-size:13px; color:var(--ink-soft); margin-top:2px;}
+  .action-btn .arrow{font-size:18px; color:var(--accent);}
+  .action-btn.disabled{cursor:default; opacity:0.5;}
+  .action-btn.disabled .arrow{color:var(--ink-soft);}
+  .action-btn.disabled .a-title::after{content:"Not in this prototype"; display:block; font-size:11.5px; font-weight:500; color:var(--ink-soft); margin-top:4px;}
+  .primary-cta{display:block; width:100%; background:var(--accent); color:var(--paper); border:none; border-radius:3px; padding:14px 18px; font-family:var(--sans); font-size:15px; font-weight:600; cursor:pointer; margin-top:4px;}
+  .primary-cta:disabled{opacity:0.5; cursor:default;}
+  .secondary-btn{display:block; width:100%; background:none; color:var(--accent); border:1px solid var(--accent); border-radius:3px; padding:12px 18px; font-family:var(--sans); font-size:14.5px; font-weight:600; cursor:pointer; margin-top:10px;}
+  .field{margin-bottom:18px;}
+  .field label{display:block; font-size:13px; color:var(--ink-soft); margin-bottom:6px;}
+  .field input, .field textarea{width:100%; font-family:var(--sans); font-size:15px; color:var(--ink); border:1px solid var(--line-strong); border-radius:3px; padding:11px 12px; background:var(--paper);}
+  .field textarea{min-height:110px; resize:vertical;}
+  .field input:focus, .field textarea:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .sample-link{font-size:13.5px; color:var(--accent); background:none; border:none; cursor:pointer; padding:0; text-decoration:underline; text-underline-offset:2px;}
+  .photo-preview{margin-top:10px; font-size:13px; color:var(--ink-soft); display:flex; align-items:center; gap:8px;}
+  .photo-preview img{width:48px; height:48px; object-fit:cover; border-radius:3px; border:1px solid var(--line);}
+  .remove-photo{color:var(--concern); background:none; border:none; font-size:13px; cursor:pointer; text-decoration:underline;}
+  .evidence{display:inline-block; font-size:11px; padding:2px 7px; border-radius:2px; margin-left:8px; font-weight:600; vertical-align:middle;}
+  .ev-verified{background:var(--good-bg); color:var(--good);}
+  .ev-estimated{background:var(--caution-bg); color:var(--caution);}
+  .ev-inferred{background:var(--accent-soft); color:var(--accent);}
+  .ev-unknown{background:var(--neutral-bg); color:var(--ink-soft);}
+  .extract-row{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); font-size:14.5px;}
+  .extract-row .k{color:var(--ink-soft); width:38%;}
+  .extract-row .v{width:62%; text-align:right;}
+  .line-item{display:flex; justify-content:space-between; padding:8px 0; font-size:14px; border-bottom:1px dashed var(--line);}
+  .line-item .item-price{color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+  .li-total{display:flex; justify-content:space-between; padding:12px 0 0; font-weight:700; font-size:15px;}
+  .assessment-block{padding:18px; border-radius:4px; margin-bottom:24px;}
+  .assessment-block.high{background:var(--caution-bg);}
+  .assessment-block.good{background:var(--good-bg);}
+  .assessment-block.concern{background:var(--concern-bg);}
+  .assessment-block.neutral{background:var(--neutral-bg);}
+  .assessment-label{font-size:12.5px; font-weight:700; letter-spacing:0.3px; margin-bottom:6px;}
+  .assessment-block.high .assessment-label{color:var(--caution);}
+  .assessment-block.good .assessment-label{color:var(--good);}
+  .assessment-block.concern .assessment-label{color:var(--concern);}
+  .assessment-block.neutral .assessment-label{color:var(--ink-soft);}
+  .assessment-headline{font-family:var(--serif); font-size:19px; font-weight:600; margin-bottom:8px;}
+  .assessment-detail{font-size:14px; color:var(--ink-soft);}
+  .compare-row{display:flex; justify-content:space-between; margin-top:14px; padding-top:14px; border-top:1px solid rgba(0,0,0,0.08);}
+  .compare-item .cl{font-size:12px; color:var(--ink-soft);}
+  .compare-item .cv{font-family:var(--serif); font-size:18px; font-weight:600; margin-top:2px;}
+  ul.plain-list{list-style:none;}
+  ul.plain-list li{padding:10px 0 10px 20px; border-bottom:1px solid var(--line); font-size:14.5px; position:relative;}
+  ul.plain-list li::before{content:"—"; position:absolute; left:0; color:var(--ink-soft);}
+  ul.plain-list li:last-child{border-bottom:none;}
+  .rec-box{border-left:3px solid var(--accent); background:var(--accent-soft); padding:14px 16px; font-size:14.5px; margin:6px 0 24px; border-radius:0 3px 3px 0;}
+  .save-row{margin-top:8px;}
+  .save-row label{font-size:13px; color:var(--ink-soft); display:block; margin-bottom:6px;}
+  select{width:100%; font-family:var(--sans); font-size:15px; color:var(--ink); border:1px solid var(--line-strong); border-radius:3px; padding:11px 12px; background:var(--paper);}
+  .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); padding:11px 20px; border-radius:4px; font-size:14px; opacity:0; pointer-events:none; transition:opacity 0.25s ease; max-width:420px; text-align:center; z-index:10;}
+  .toast.show{opacity:1;}
+  .privacy-note{font-size:12px; color:var(--ink-soft); text-align:center; margin-top:36px; padding-top:16px; border-top:1px solid var(--line); line-height:1.6;}
+  .loading-block{padding:60px 0; text-align:center; color:var(--ink-soft); font-size:14.5px;}
+  .spinner{width:28px; height:28px; border:3px solid var(--line); border-top-color:var(--accent); border-radius:50%; margin:0 auto 16px; animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .error-block{padding:16px; background:var(--concern-bg); border-radius:4px; margin-bottom:20px;}
+  .error-block .e-title{font-weight:700; color:var(--concern); font-size:14.5px; margin-bottom:4px;}
+  .error-block .e-detail{font-size:13.5px; color:var(--ink-soft);}
+  .not-verified{display:inline-block; font-size:11px; font-weight:700; color:var(--ink-soft); background:var(--neutral-bg); padding:2px 7px; border-radius:2px; margin-left:6px;}
+  .ref-note{font-size:12.5px; color:var(--ink-soft); margin-top:8px; line-height:1.5;}
+  .history-card{border:1px solid var(--line); border-radius:4px; padding:16px; margin-bottom:16px;}
+  .history-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;}
+  .history-head .h-label{font-family:var(--serif); font-weight:600; font-size:15.5px;}
+  .history-head .h-date{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .judgment-badge{font-size:11px; font-weight:700; padding:3px 8px; border-radius:2px; white-space:nowrap;}
+  .judgment-badge.accurate{background:var(--good-bg); color:var(--good);}
+  .judgment-badge.inaccurate{background:var(--concern-bg); color:var(--concern);}
+  .judgment-badge.unjudged{background:var(--neutral-bg); color:var(--ink-soft);}
+  .history-detail{font-size:13.5px; color:var(--ink-soft); margin:4px 0;}
+  .history-detail b{color:var(--ink); font-weight:600;}
+  .judge-row{display:flex; gap:8px; margin-top:12px;}
+  .judge-btn{flex:1; font-family:var(--sans); font-size:13px; font-weight:600; padding:9px; border-radius:3px; cursor:pointer; border:1px solid var(--line-strong); background:var(--paper); color:var(--ink);}
+  .judge-btn.active-accurate{background:var(--good-bg); border-color:var(--good); color:var(--good);}
+  .judge-btn.active-inaccurate{background:var(--concern-bg); border-color:var(--concern); color:var(--concern);}
+  .toggle-detail{font-size:12.5px; color:var(--accent); background:none; border:none; cursor:pointer; padding:0; text-decoration:underline; margin-top:6px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="proto-banner">
+    Real AI extraction &amp; analysis, grounded in researched cost-guide data for 4 project types. Not a licensed pricing feed, not location-adjusted, no accounts — reload clears the session on some devices.
+  </div>
+
+  <header class="topbar">
+    <div class="mark">home<span>guard</span></div>
+    <button class="back-btn" id="backBtn" style="display:none;" onclick="goHome()">← Home</button>
+  </header>
+
+  <main>
+
+    <!-- HOME -->
+    <section class="screen active" id="screen-home">
+      <div class="property-line">
+        <div>
+          <div class="label">Your home</div>
+          <div class="name">The Maple Street house</div>
+        </div>
+      </div>
+
+      <div class="section-tab">Tracked systems &amp; appliances</div>
+      <div id="assetList">
+        <div class="empty-state" id="emptyState">Nothing tracked yet. When you review a quote, HomeGuard starts building a record here.</div>
+      </div>
+
+      <div class="section-tab">What do you need to do?</div>
+      <button class="action-btn" onclick="goScreen('screen-intake')">
+        <div><div class="a-title">Review a contractor quote</div><div class="a-desc">Check pricing, flag issues, get questions to ask</div></div>
+        <div class="arrow">→</div>
+      </button>
+      <button class="action-btn disabled"><div><div class="a-title">Diagnose a problem from a photo</div></div><div class="arrow">→</div></button>
+      <button class="action-btn disabled"><div><div class="a-title">Check a warranty</div></div><div class="arrow">→</div></button>
+
+      <div class="section-tab">Validation</div>
+      <button class="action-btn" onclick="goScreen('screen-history')">
+        <div><div class="a-title">Review saved quotes &amp; check accuracy</div><div class="a-desc" id="accuracySummary">No quotes reviewed yet</div></div>
+        <div class="arrow">→</div>
+      </button>
+
+      <div class="privacy-note">This demo sends quote text/photos to Anthropic's API to generate the analysis. Saved records persist to this artifact's storage, tied to your account on this device — not a real multi-user database.</div>
+    </section>
+
+    <!-- HISTORY / ACCURACY CHECK -->
+    <section class="screen" id="screen-history">
+      <h1 class="page-title">Saved quotes</h1>
+      <p class="page-sub" id="historyStats">No quotes reviewed yet.</p>
+      <div id="historyList"></div>
+    </section>
+
+    <!-- INTAKE -->
+    <section class="screen" id="screen-intake">
+      <h1 class="page-title">Review a contractor quote</h1>
+      <p class="page-sub">Paste the quote text, add a photo of it, or both.</p>
+
+      <div class="field">
+        <label for="quoteText">Quote details</label>
+        <textarea id="quoteText" placeholder="Paste line items, total, deposit terms, warranty info..."></textarea>
+      </div>
+
+      <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="handlePhoto(event)">
+      <button class="secondary-btn" onclick="document.getElementById('photoInput').click()">Add a photo of the quote</button>
+      <div class="photo-preview" id="photoPreview" style="display:none;">
+        <img id="photoThumb" src="" alt="">
+        <span id="photoName"></span>
+        <button class="remove-photo" onclick="clearPhoto()">Remove</button>
+      </div>
+
+      <button class="primary-cta" style="margin-top:18px;" id="analyzeBtn" onclick="runAnalysis()">Analyze this quote</button>
+      <button class="sample-link" style="display:block; margin:14px auto 0;" onclick="loadSample()">Try a sample quote instead</button>
+    </section>
+
+    <!-- LOADING -->
+    <section class="screen" id="screen-loading">
+      <div class="loading-block">
+        <div class="spinner"></div>
+        <div id="loadingMsg">Reading your quote…</div>
+      </div>
+    </section>
+
+    <!-- ERROR -->
+    <section class="screen" id="screen-error">
+      <h1 class="page-title">Couldn't complete the analysis</h1>
+      <div class="error-block">
+        <div class="e-title">NOT VERIFIED <span class="not-verified">no result produced</span></div>
+        <div class="e-detail" id="errorDetail">Something went wrong reaching the analysis service.</div>
+      </div>
+      <button class="primary-cta" onclick="goScreen('screen-intake')">Try again</button>
+    </section>
+
+    <!-- EXTRACTION -->
+    <section class="screen" id="screen-extraction">
+      <h1 class="page-title">What we found</h1>
+      <p class="page-sub">Extracted from what you provided.</p>
+
+      <div class="extract-row"><div class="k">Contractor</div><div class="v" id="ex-contractor">—</div></div>
+      <div class="extract-row"><div class="k">Project</div><div class="v" id="ex-project">—</div></div>
+      <div class="extract-row"><div class="k">Payment schedule</div><div class="v" id="ex-payment">—</div></div>
+      <div class="extract-row"><div class="k">Permits</div><div class="v" id="ex-permits">—</div></div>
+      <div class="extract-row"><div class="k">Warranty terms</div><div class="v" id="ex-warranty">—</div></div>
+
+      <div class="section-tab">Line items</div>
+      <div id="lineItemsList"></div>
+      <div class="li-total"><span>Total quoted</span><span id="ex-total">—</span></div>
+      <div class="ref-note" id="extractionNotes"></div>
+
+      <button class="primary-cta" style="margin-top:28px;" onclick="goScreen('screen-review')">See the full review</button>
+    </section>
+
+    <!-- REVIEW -->
+    <section class="screen" id="screen-review">
+      <h1 class="page-title">Quote review</h1>
+
+      <div class="assessment-block" id="assessmentBlock">
+        <div class="assessment-label" id="assessmentLabel">ASSESSMENT</div>
+        <div class="assessment-headline" id="assessmentHeadline">—</div>
+        <div class="assessment-detail" id="assessmentDetail">—</div>
+        <div class="compare-row" id="compareRow">
+          <div class="compare-item"><div class="cl">Total quoted</div><div class="cv" id="cmp-total">—</div></div>
+          <div class="compare-item"><div class="cl">Reference range<span class="evidence ev-estimated">Estimated</span></div><div class="cv" id="cmp-range">—</div></div>
+        </div>
+        <div class="ref-note" id="refSourceNote"></div>
+      </div>
+
+      <div class="section-tab">Worth clarifying</div>
+      <ul class="plain-list" id="issuesList"></ul>
+
+      <div class="section-tab">Questions to ask the contractor</div>
+      <ul class="plain-list" id="questionsList"></ul>
+
+      <div class="section-tab">Our take</div>
+      <div class="rec-box" id="recommendationBox"></div>
+
+      <div class="section-tab">Save to your home record</div>
+      <div class="save-row">
+        <label for="assetLabel">Label this for your home record</label>
+        <input type="text" id="assetLabel" placeholder="e.g. HVAC system">
+      </div>
+      <button class="primary-cta" style="margin-top:14px;" onclick="saveToRecord()">Save quote to home record</button>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ---- Reference cost data, sourced from published 2026 home-services cost guides.
+  // This is the ONLY pricing data the model is allowed to compare against.
+  const REFERENCE_DATA = [
+    {
+      key: "hvac_full_replacement",
+      label: "Full HVAC system replacement (central AC + furnace or heat pump)",
+      low: 7000, high: 16000,
+      note: "Typical range for a standard single-family home with moderate ductwork changes. Premium/large-home or multi-zone systems can run higher; basic swaps reusing existing ducts can run lower."
+    },
+    {
+      key: "water_heater_replacement",
+      label: "Water heater replacement (standard 40-50 gallon tank)",
+      low: 1200, high: 3000,
+      note: "Tankless units typically run $2,500-$5,500 installed instead."
+    },
+    {
+      key: "roof_replacement",
+      label: "Roof replacement (asphalt shingle, typical single-family home)",
+      low: 8000, high: 16000,
+      note: "Assumes standard asphalt shingle on an average ~1,700 sq ft roof. Premium materials (tile, slate, metal) run significantly higher."
+    },
+    {
+      key: "electrical_panel_upgrade",
+      label: "Electrical panel upgrade (100A to 200A service)",
+      low: 1500, high: 4000,
+      note: "Full service upgrades needing a new utility line, meter base, or extensive rewiring can run $4,000-$8,000+."
+    }
+  ];
+
+  const SAMPLE_QUOTE_TEXT =
+    "Coastal Comfort HVAC - Estimate\n" +
+    "Project: Full HVAC system replacement (3-ton central AC/furnace)\n" +
+    "3-ton central AC/furnace system - $8,200\n" +
+    "Ductwork modification - $2,100\n" +
+    "Labor & installation - $3,200\n" +
+    "Permit fee - $300\n" +
+    "1-year labor warranty (included)\n" +
+    "Total: $14,800\n" +
+    "Payment: 50% deposit, 50% due on completion\n" +
+    "Warranty: 10-year manufacturer parts warranty; 1-year labor warranty, terms not detailed";
+
+  function buildSystemPrompt(){
+    const refText = REFERENCE_DATA.map(r =>
+      "- " + r.label + " (key: " + r.key + "): $" + r.low.toLocaleString() + " - $" + r.high.toLocaleString() + ". " + r.note
+    ).join("\n");
+
+    return "You are the extraction and analysis engine for HomeGuard, a homeowner decision-support tool that reviews contractor quotes.\n\n" +
+      "You will receive the text of a contractor quote, and possibly a photo of one. Your job:\n" +
+      "1. Extract structured fields. Never invent information that isn't present. If a field can't be determined, use null and say so.\n" +
+      "2. Try to match the project to ONE of the reference categories below. If it doesn't clearly match any of them, set matchedCategory to null and assessment.tier to \"insufficient_data\" - do NOT invent a market range for an unlisted category.\n" +
+      "3. If it matches, compare the total quoted against that category's reference range ONLY. Never use any other pricing knowledge or make up a number.\n" +
+      "4. Write in a neutral, non-accusatory tone. Never say a contractor is committing fraud or ripping someone off. Use phrases like \"worth clarifying\", \"higher than the reference range\", \"insufficient information\".\n" +
+      "5. List 2-5 specific issues worth clarifying, based on what's actually missing or ambiguous in THIS quote (not generic boilerplate).\n" +
+      "6. List 3-5 specific questions the homeowner could ask the contractor, based on the gaps found.\n" +
+      "7. Give a short recommendation that explains its reasoning, not just a verdict.\n\n" +
+      "REFERENCE COST DATA (the only pricing data you may use for comparison):\n" + refText + "\n\n" +
+      "Respond with ONLY valid JSON, no markdown code fences, no preamble or explanation outside the JSON. Match this exact shape:\n" +
+      "{\n" +
+      '  "contractor": string or null,\n' +
+      '  "project": string,\n' +
+      '  "total": number or null,\n' +
+      '  "lineItems": [{"item": string, "price": number or null}],\n' +
+      '  "paymentSchedule": string or null,\n' +
+      '  "permits": string or null,\n' +
+      '  "warrantyTerms": string or null,\n' +
+      '  "extractionNotes": string (brief note on anything you could not determine, or empty string),\n' +
+      '  "matchedCategory": one of the reference keys above, or null,\n' +
+      '  "assessment": {\n' +
+      '    "tier": "high" or "in_range" or "low" or "insufficient_data",\n' +
+      '    "headline": short string,\n' +
+      '    "detail": one sentence\n' +
+      '  },\n' +
+      '  "issues": [string, ...],\n' +
+      '  "questions": [string, ...],\n' +
+      '  "recommendation": string\n' +
+      "}";
+  }
+
+  function goScreen(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.getElementById('backBtn').style.display = (id === 'screen-home') ? 'none' : 'inline-block';
+    if (id === 'screen-history') renderHistoryScreen();
+    window.scrollTo(0,0);
+  }
+  function goHome(){ goScreen('screen-home'); }
+
+  function loadSample(){
+    document.getElementById('quoteText').value = SAMPLE_QUOTE_TEXT;
+    showToast('Sample quote loaded');
+  }
+
+  let photoBase64 = null;
+  let photoMediaType = null;
+
+  function handlePhoto(event){
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const result = e.target.result;
+      photoBase64 = result.split(',')[1];
+      photoMediaType = file.type || 'image/jpeg';
+      document.getElementById('photoThumb').src = result;
+      document.getElementById('photoName').textContent = file.name;
+      document.getElementById('photoPreview').style.display = 'flex';
+    };
+    reader.onerror = function(){ showToast('Could not read that image'); };
+    reader.readAsDataURL(file);
+  }
+  function clearPhoto(){
+    photoBase64 = null; photoMediaType = null;
+    document.getElementById('photoInput').value = '';
+    document.getElementById('photoPreview').style.display = 'none';
+  }
+
+  let currentAnalysis = null;
+  const loadingMessages = ["Reading your quote…", "Checking against reference cost data…", "Putting the review together…"];
+
+  async function runAnalysis(){
+    const text = document.getElementById('quoteText').value.trim();
+    if (!text && !photoBase64) {
+      showToast('Paste the quote text or add a photo first');
+      return;
+    }
+
+    goScreen('screen-loading');
+    let msgIndex = 0;
+    document.getElementById('loadingMsg').textContent = loadingMessages[0];
+    const loadingInterval = setInterval(() => {
+      msgIndex = (msgIndex + 1) % loadingMessages.length;
+      document.getElementById('loadingMsg').textContent = loadingMessages[msgIndex];
+    }, 1400);
+
+    try {
+      const content = [];
+      if (photoBase64) {
+        content.push({type:"image", source:{type:"base64", media_type: photoMediaType, data: photoBase64}});
+      }
+      content.push({type:"text", text: text || "See attached photo of the contractor quote."});
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1500,
+          system: buildSystemPrompt(),
+          messages: [{role: "user", content}]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Analysis service returned an error (status " + response.status + ")");
+      }
+
+      const data = await response.json();
+      const textBlock = (data.content || []).map(b => b.text || "").join("\n").trim();
+      const cleaned = textBlock.replace(/^```json\s*/i, '').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+
+      let parsed;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch (parseErr) {
+        throw new Error("The analysis came back in an unexpected format and couldn't be read.");
+      }
+
+      if (!parsed || typeof parsed !== 'object' || !parsed.assessment) {
+        throw new Error("The analysis was missing expected fields.");
+      }
+
+      clearInterval(loadingInterval);
+      currentAnalysis = parsed;
+      renderExtraction(parsed);
+      renderReview(parsed);
+      goScreen('screen-extraction');
+
+    } catch (err) {
+      clearInterval(loadingInterval);
+      document.getElementById('errorDetail').textContent = err.message || "Something went wrong reaching the analysis service. Nothing was saved.";
+      goScreen('screen-error');
+    }
+  }
+
+  function fmtMoney(n){
+    return (typeof n === 'number') ? ('$' + n.toLocaleString()) : 'Not stated';
+  }
+
+  function renderExtraction(a){
+    document.getElementById('ex-contractor').innerHTML = (a.contractor || 'Not stated') + evidenceTag(a.contractor);
+    document.getElementById('ex-project').innerHTML = (a.project || 'Not stated') + evidenceTag(a.project);
+    document.getElementById('ex-payment').innerHTML = (a.paymentSchedule || 'Not stated') + evidenceTag(a.paymentSchedule);
+    document.getElementById('ex-permits').innerHTML = (a.permits || 'Not stated') + evidenceTag(a.permits, true);
+    document.getElementById('ex-warranty').innerHTML = (a.warrantyTerms || 'Not stated') + evidenceTag(a.warrantyTerms, true);
+
+    const liList = document.getElementById('lineItemsList');
+    const items = Array.isArray(a.lineItems) ? a.lineItems : [];
+    liList.innerHTML = items.map(li =>
+      '<div class="line-item"><span class="item-name">' + (li.item || 'Item') + '</span><span class="item-price">' + fmtMoney(li.price) + '</span></div>'
+    ).join('') || '<div class="empty-state">No line items could be extracted.</div>';
+
+    document.getElementById('ex-total').textContent = fmtMoney(a.total);
+    document.getElementById('extractionNotes').textContent = a.extractionNotes || '';
+  }
+
+  function evidenceTag(value, inferred){
+    if (value === null || value === undefined || value === '') return '<span class="evidence ev-unknown">Unknown</span>';
+    return inferred ? '<span class="evidence ev-inferred">Inferred</span>' : '<span class="evidence ev-verified">Verified</span>';
+  }
+
+  function renderReview(a){
+    const block = document.getElementById('assessmentBlock');
+    const label = document.getElementById('assessmentLabel');
+    const headline = document.getElementById('assessmentHeadline');
+    const detail = document.getElementById('assessmentDetail');
+    const compareRow = document.getElementById('compareRow');
+    const refNote = document.getElementById('refSourceNote');
+
+    const tier = (a.assessment && a.assessment.tier) || 'insufficient_data';
+    const tierClassMap = {high:'high', in_range:'good', low:'good', insufficient_data:'neutral'};
+    block.className = 'assessment-block ' + (tierClassMap[tier] || 'neutral');
+
+    const labelMap = {high:'POTENTIALLY HIGH', in_range:'IN RANGE', low:'BELOW TYPICAL RANGE', insufficient_data:'NO REFERENCE DATA'};
+    label.textContent = labelMap[tier] || 'ASSESSMENT';
+    headline.textContent = (a.assessment && a.assessment.headline) || '—';
+    detail.textContent = (a.assessment && a.assessment.detail) || '';
+
+    if (tier === 'insufficient_data') {
+      compareRow.style.display = 'none';
+      refNote.textContent = "We don't have reference pricing for this type of project yet, so this can't be compared to a market range — the notes below are based only on what's in the document.";
+    } else {
+      compareRow.style.display = 'flex';
+      document.getElementById('cmp-total').textContent = fmtMoney(a.total);
+      const ref = REFERENCE_DATA.find(r => r.key === a.matchedCategory);
+      document.getElementById('cmp-range').textContent = ref ? ('$' + ref.low.toLocaleString() + '-$' + ref.high.toLocaleString()) : '—';
+      refNote.textContent = ref ? ('Matched to: ' + ref.label + '. ' + ref.note) : '';
+    }
+
+    document.getElementById('issuesList').innerHTML = (a.issues || []).map(i => '<li>' + i + '</li>').join('') || '<li>None identified.</li>';
+    document.getElementById('questionsList').innerHTML = (a.questions || []).map(q => '<li>' + q + '</li>').join('') || '<li>None identified.</li>';
+    document.getElementById('recommendationBox').textContent = a.recommendation || 'No recommendation was returned.';
+    document.getElementById('assetLabel').value = a.project || '';
+  }
+
+  // ---- Persistence via the artifact storage API (real — persists to this artifact's storage, tied to your account) ----
+  const STORAGE_KEY = 'homeguard-assets';
+  let allAssets = [];
+
+  async function readAssets(){
+    try {
+      const result = await window.storage.get(STORAGE_KEY, false);
+      return result ? JSON.parse(result.value) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async function loadHomeRecord(){
+    allAssets = await readAssets();
+    if (allAssets.length > 0) {
+      const empty = document.getElementById('emptyState');
+      if (empty) empty.remove();
+      allAssets.forEach(renderAssetRow);
+    }
+    updateAccuracySummary();
+  }
+
+  function renderAssetRow(asset){
+    const list = document.getElementById('assetList');
+    const row = document.createElement('div');
+    row.className = 'asset-row';
+    const statusColor = asset.tier === 'high' ? 'var(--caution)' : (asset.tier === 'insufficient_data' ? 'var(--ink-soft)' : 'var(--good)');
+    const judgeMark = asset.judgment === 'accurate' ? ' · ✓ accurate' : (asset.judgment === 'inaccurate' ? ' · ✗ inaccurate' : '');
+    row.innerHTML =
+      '<div><div class="a-name">' + asset.label + '</div>' +
+      '<div class="a-meta">Quote reviewed · ' + (asset.contractor || 'Contractor not stated') + ' · ' + fmtMoney(asset.total) + judgeMark + '</div></div>' +
+      '<div class="a-status" style="color:' + statusColor + ';">' + asset.statusText + '</div>';
+    list.appendChild(row);
+  }
+
+  function updateAccuracySummary(){
+    const el = document.getElementById('accuracySummary');
+    if (!el) return;
+    const total = allAssets.length;
+    const judged = allAssets.filter(a => a.judgment).length;
+    const accurate = allAssets.filter(a => a.judgment === 'accurate').length;
+    if (total === 0) { el.textContent = 'No quotes reviewed yet'; return; }
+    el.textContent = total + ' saved · ' + judged + ' judged · ' + accurate + '/' + judged + ' marked accurate';
+  }
+
+  async function saveToRecord(){
+    if (!currentAnalysis) return;
+    const label = document.getElementById('assetLabel').value.trim() || currentAnalysis.project || 'Untitled project';
+    const tier = (currentAnalysis.assessment && currentAnalysis.assessment.tier) || 'insufficient_data';
+    const statusTextMap = {high:'Potentially high', in_range:'In range', low:'Below range', insufficient_data:'No reference data'};
+
+    // Store the FULL analysis, not just a summary, so it can be reviewed for accuracy later.
+    const asset = {
+      label: label,
+      contractor: currentAnalysis.contractor,
+      total: currentAnalysis.total,
+      tier: tier,
+      statusText: statusTextMap[tier] || 'Reviewed',
+      savedAt: new Date().toISOString(),
+      judgment: null,       // null | 'accurate' | 'inaccurate' — set by you in the history screen
+      fullAnalysis: currentAnalysis
+    };
+
+    try {
+      const assets = await readAssets();
+      assets.push(asset);
+      const result = await window.storage.set(STORAGE_KEY, JSON.stringify(assets), false);
+      if (!result) throw new Error('save failed');
+
+      allAssets = assets;
+      const empty = document.getElementById('emptyState');
+      if (empty) empty.remove();
+      renderAssetRow(asset);
+      updateAccuracySummary();
+      showToast('Saved to your home record');
+      goHome();
+    } catch (e) {
+      showToast("Couldn't save — storage may be unavailable, but here's the review");
+      goHome();
+    }
+  }
+
+  // ---- History / accuracy-check screen ----
+  function renderHistoryScreen(){
+    const list = document.getElementById('historyList');
+    const stats = document.getElementById('historyStats');
+
+    if (allAssets.length === 0) {
+      stats.textContent = 'No quotes reviewed yet.';
+      list.innerHTML = '<div class="empty-state">Run a quote through "Review a contractor quote" first, then come back here to judge whether the assessment held up.</div>';
+      return;
+    }
+
+    const judged = allAssets.filter(a => a.judgment).length;
+    const accurate = allAssets.filter(a => a.judgment === 'accurate').length;
+    stats.textContent = allAssets.length + ' saved · ' + judged + ' of ' + allAssets.length + ' judged so far' +
+      (judged > 0 ? ' · ' + accurate + '/' + judged + ' marked accurate' : '');
+
+    list.innerHTML = allAssets.map((asset, idx) => {
+      const a = asset.fullAnalysis || {};
+      const tierLabelMap = {high:'Potentially high', in_range:'In range', low:'Below range', insufficient_data:'No reference data'};
+      const badgeClass = asset.judgment === 'accurate' ? 'accurate' : (asset.judgment === 'inaccurate' ? 'inaccurate' : 'unjudged');
+      const badgeText = asset.judgment === 'accurate' ? 'Marked accurate' : (asset.judgment === 'inaccurate' ? 'Marked inaccurate' : 'Not yet judged');
+      const issuesHtml = (a.issues || []).map(i => '<li>' + i + '</li>').join('');
+      const questionsHtml = (a.questions || []).map(q => '<li>' + q + '</li>').join('');
+
+      return '<div class="history-card">' +
+        '<div class="history-head">' +
+          '<div><div class="h-label">' + asset.label + '</div><div class="h-date">' + new Date(asset.savedAt).toLocaleDateString() + '</div></div>' +
+          '<div class="judgment-badge ' + badgeClass + '">' + badgeText + '</div>' +
+        '</div>' +
+        '<div class="history-detail"><b>Contractor:</b> ' + (asset.contractor || 'Not stated') + '</div>' +
+        '<div class="history-detail"><b>Total quoted:</b> ' + fmtMoney(asset.total) + '</div>' +
+        '<div class="history-detail"><b>Assessment:</b> ' + (tierLabelMap[asset.tier] || asset.tier) + (a.matchedCategory ? ' — matched to ' + a.matchedCategory : '') + '</div>' +
+        (a.recommendation ? '<div class="history-detail"><b>Recommendation given:</b> ' + a.recommendation + '</div>' : '') +
+        (issuesHtml ? '<div class="history-detail"><b>Issues flagged:</b><ul class="plain-list">' + issuesHtml + '</ul></div>' : '') +
+        (questionsHtml ? '<div class="history-detail"><b>Questions given:</b><ul class="plain-list">' + questionsHtml + '</ul></div>' : '') +
+        '<div class="judge-row">' +
+          '<button class="judge-btn' + (asset.judgment==='accurate' ? ' active-accurate' : '') + '" onclick="markAccuracy(' + idx + ', \'accurate\')">This was accurate</button>' +
+          '<button class="judge-btn' + (asset.judgment==='inaccurate' ? ' active-inaccurate' : '') + '" onclick="markAccuracy(' + idx + ', \'inaccurate\')">This was off</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  async function markAccuracy(idx, judgment){
+    if (!allAssets[idx]) return;
+    allAssets[idx].judgment = allAssets[idx].judgment === judgment ? null : judgment; // tap again to un-set
+    try {
+      await window.storage.set(STORAGE_KEY, JSON.stringify(allAssets), false);
+    } catch (e) {
+      showToast("Couldn't save that judgment");
+    }
+    renderHistoryScreen();
+    updateAccuracySummary();
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  loadHomeRecord();
+</script>
+</body>
+</html>
